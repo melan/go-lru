@@ -1,0 +1,15 @@
+name: Main flow
+on: [push, pull_request]
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    container: golang:1.15-alpine
+    steps:
+      - uses: actions/checkout@v2
+      - name: run make
+        env:
+          CGO_ENABLED: 0
+        run: |
+          apk add make
+          make
+
