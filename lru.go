@@ -4,4 +4,5 @@ package lru
 type LRU interface {
 	Get(key string) (bool, interface{})
 	Set(key string, value interface{})
+	Size() int
 }

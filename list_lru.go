@@ -58,6 +58,10 @@ func (l *listLRU) Set(key string, value interface{}) {
 	}
 }
 
+func (l *listLRU) Size() int {
+	return len(l.cache)
+}
+
 func (l *listLRU) trySwap(i int) {
 	if i > 0 && l.cache[i].hits > l.cache[i-1].hits {
 		prevItem := l.cache[i-1]
