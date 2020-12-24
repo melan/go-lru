@@ -126,6 +126,17 @@ func (l *bintreeLRU) Size() int {
 	return l.size
 }
 
+func (l *bintreeLRU) extractPopularityKeys() []string {
+	popularityList := make([]string, 0, l.size)
+	tail := l.popularityTail
+	for tail != nil {
+		popularityList = append([]string{tail.key}, popularityList...)
+		tail = tail.morePopularNode
+	}
+
+	return popularityList
+}
+
 func (l *bintreeLRU) swap(node *bintreeLRUItem) {
 	for {
 		if node == nil || node.morePopularNode == nil || node.hits <= node.morePopularNode.hits {

@@ -48,17 +48,6 @@ func extractBinTreeItems(tip *bintreeLRUItem) map[string]simplifiedBinTreeItem {
 	return m
 }
 
-func extractBinTreePopularity(popularityTail *bintreeLRUItem, size int) []string {
-	popularityList := make([]string, 0, size)
-	tail := popularityTail
-	for tail != nil {
-		popularityList = append([]string{tail.key}, popularityList...)
-		tail = tail.morePopularNode
-	}
-
-	return popularityList
-}
-
 func TestBintreeLRUCache_Set(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -185,7 +174,7 @@ func TestBintreeLRUCache_Set(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.wantSize, cache.Size())
-			gotPopularityList := extractBinTreePopularity(cache.popularityTail, cache.size)
+			gotPopularityList := cache.extractPopularityKeys()
 
 			assert.Equal(t, tt.wantItemsPriority, gotPopularityList)
 
@@ -347,7 +336,7 @@ func TestBintreeLRUCache_evict(t *testing.T) {
 			cache.evict()
 
 			assert.Equal(t, tt.wantSize, cache.Size())
-			gotPopularityList := extractBinTreePopularity(cache.popularityTail, cache.size)
+			gotPopularityList := cache.extractPopularityKeys()
 
 			assert.Equal(t, tt.wantItemsPriority, gotPopularityList)
 

@@ -30,8 +30,9 @@ func NewListLRU(capacity int) LRU {
 func (l *listLRU) Get(key string) (found bool, value interface{}) {
 	for i, item := range l.cache {
 		if item.key == key {
-			l.cache[i].hits++
-			l.trySwap(i)
+			item.hits++
+			l.cache[i] = item
+			l.swap(i)
 
 			return true, item.value
 		}
@@ -42,8 +43,9 @@ func (l *listLRU) Get(key string) (found bool, value interface{}) {
 func (l *listLRU) Set(key string, value interface{}) {
 	for i, item := range l.cache {
 		if item.key == key {
-			l.cache[i].hits++
-			l.trySwap(i)
+			item.hits++
+			l.cache[i] = item
+			l.swap(i)
 
 			return
 		}
@@ -62,15 +64,29 @@ func (l *listLRU) Size() int {
 	return len(l.cache)
 }
 
-func (l *listLRU) trySwap(i int) {
-	if i > 0 && l.cache[i].hits > l.cache[i-1].hits {
+func (l *listLRU) extractPopularityKeys() []string {
+	keys := make([]string, 0, len(l.cache))
+	for _, item := range l.cache {
+		keys = append(keys, item.key)
+	}
+
+	return keys
+}
+
+func (l *listLRU) swap(i int) {
+	for {
+		if i == 0 || l.cache[i].hits <= l.cache[i-1].hits {
+			return
+		}
 		prevItem := l.cache[i-1]
-		l.cache[i-1].hits = l.cache[i].hits + 1
+		l.cache[i-1].hits = l.cache[i].hits
 		l.cache[i-1].key = l.cache[i].key
 		l.cache[i-1].value = l.cache[i].value
 
 		l.cache[i].hits = prevItem.hits
 		l.cache[i].key = prevItem.key
 		l.cache[i].value = prevItem.value
+
+		i--
 	}
 }

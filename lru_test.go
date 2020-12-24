@@ -2,6 +2,7 @@ package lru
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,181 +16,89 @@ func testLRUCache(t *testing.T, newLRU func(capacity int) LRU) {
 	}
 
 	tests := []struct {
-		name     string
-		capacity int
-		items    []cacheItem
-		wantSize int
+		name              string
+		capacity          int
+		items             []string
+		wantSize          int
+		wantItemsPriority []string
+		wantItems         []string
 	}{
 		{
-			name:     "Single item",
-			capacity: 2,
-			items: []cacheItem{
-				{
-					key:      "a",
-					value:    "b",
-					expected: true,
-				},
-			},
-			wantSize: 1,
+			name:              "Single item",
+			capacity:          2,
+			items:             []string{"a"},
+			wantItemsPriority: []string{"a"},
+			wantItems:         []string{"a"},
+			wantSize:          1,
 		},
 		{
-			name:     "Zero capacity",
-			capacity: 0,
-			items: []cacheItem{
-				{
-					key:      "a",
-					value:    "b",
-					expected: false,
-				},
-				{
-					key:      "c",
-					value:    "d",
-					expected: true,
-				},
-			},
-			wantSize: 1,
+			name:              "Zero capacity",
+			capacity:          0,
+			items:             []string{"a", "c"},
+			wantItemsPriority: []string{"c"},
+			wantItems:         []string{"c"},
+			wantSize:          1,
 		},
 		{
-			name:     "Exact cache capacity",
-			capacity: 2,
-			items: []cacheItem{
-				{
-					key:      "a",
-					value:    "b",
-					expected: true,
-				},
-				{
-					key:      "b",
-					value:    "c",
-					expected: true,
-				},
-			},
-			wantSize: 2,
+			name:              "Exact cache capacity",
+			capacity:          2,
+			items:             []string{"a", "b"},
+			wantItemsPriority: []string{"a", "b"},
+			wantItems:         []string{"a", "b"},
+			wantSize:          2,
 		},
 		{
-			name:     "Duplicates",
-			capacity: 2,
-			items: []cacheItem{
-				{
-					key:      "a",
-					value:    "b",
-					expected: true,
-				},
-				{
-					key:      "b",
-					value:    "c",
-					expected: true,
-				},
-				{
-					key:      "a",
-					value:    "b",
-					expected: true,
-				},
-				{
-					key:      "a",
-					value:    "b",
-					expected: true,
-				},
-			},
-			wantSize: 2,
+			name:              "Duplicates",
+			capacity:          2,
+			items:             strings.Split("abaa", ""),
+			wantItemsPriority: []string{"a", "b"},
+			wantItems:         []string{"a", "b"},
+			wantSize:          2,
 		},
 		{
-			name:     "Evictions",
-			capacity: 2,
-			items: []cacheItem{
-				{
-					key:      "a",
-					value:    "b",
-					expected: true,
-				},
-				{
-					key:      "b",
-					value:    "c",
-					expected: false,
-				},
-				{
-					key:      "c",
-					value:    "d",
-					expected: true,
-				},
-				{
-					key:      "a",
-					value:    "b",
-					expected: true,
-				},
-			},
-			wantSize: 2,
+			name:              "Evictions",
+			capacity:          2,
+			items:             strings.Split("abca", ""),
+			wantItemsPriority: strings.Split("ac", ""),
+			wantItems:         strings.Split("ac", ""),
+			wantSize:          2,
 		},
 		{
-			name:     "Duplicates, Swaps and Evictions",
-			capacity: 4,
-			items: []cacheItem{
-				{key: "a", value: " ", expected: false},
-				{key: "b", value: " ", expected: false},
-				{key: "b", value: " ", expected: false},
-				{key: "b", value: " ", expected: false},
-				{key: "c", value: " ", expected: true},
-				{key: "a", value: " ", expected: false},
-				{key: "z", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "z", value: " ", expected: true},
-				{key: "z", value: " ", expected: true},
-				{key: "b", value: " ", expected: false},
-				{key: "d", value: " ", expected: true},
-				{key: "d", value: " ", expected: true},
-				{key: "z", value: " ", expected: true},
-				{key: "z", value: " ", expected: true},
-				{key: "z", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "d", value: " ", expected: true},
-				{key: "d", value: " ", expected: true},
-				{key: "d", value: " ", expected: true},
-				{key: "d", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "d", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "b", value: " ", expected: false},
-				{key: "b", value: " ", expected: false},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "e", value: " ", expected: true},
-				{key: "d", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-				{key: "c", value: " ", expected: true},
-			},
-			wantSize: 4,
+			name:              "Duplicates, Swaps and Evictions",
+			capacity:          4,
+			items:             strings.Split("abbbcazccczzbddzzzcddddcdcbbeeeeeeeeedccc", ""),
+			wantItemsPriority: strings.Split("cedz", ""),
+			wantItems:         strings.Split("cedz", ""),
+			wantSize:          4,
+		},
+		{
+			name:              "evictoins with duplicates",
+			items:             strings.Split("jaskldfhcweoichpqwoiehcmkamshjcfnioqhwecfionhqpwiehfluvnhwrbiuvhbnsihdfbviavwheoifanwioefhcqhuierhvboaiuwehcnofiquwhefoihgbahvoimacmjfoniahjwoeihvblaushdlfajkvshldlvjnkshcmiuehbghvlaksndfmvzxmnhfvuiahberoigupvhqwbeghpbqvuweyrpinvqwkjsbdvjkdzhalnviuwevoybuiwehcfmoiquwhenivubqhwpeiufcmhlskduhlfaishdlfabjkhsdflivhaslkjdfhlbaiushvlnviufhalwuiehfkjshdflbiuvahwleuifhiwubhvajkshdf", ""),
+			capacity:          10,
+			wantSize:          10,
+			wantItemsPriority: strings.Split("hfalsjkcmd", ""),
 		},
 	}
 
+	testValue := "some value"
 	for _, test := range tests {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			cache := newLRU(tt.capacity)
-			for _, item := range tt.items {
-				cache.Set(item.key, item.value)
+			for _, key := range tt.items {
+				cache.Set(key, testValue)
 			}
 
 			assert.Equal(t, tt.wantSize, cache.Size())
 
-			for _, item := range tt.items {
-				gotFound, gotValue := cache.Get(item.key)
+			gotPopularityList := cache.extractPopularityKeys()
+			assert.Equal(t, tt.wantItemsPriority, gotPopularityList, "Popularity list doesn't match")
 
-				if item.expected {
-					assert.True(t, gotFound, fmt.Sprintf("Item %q should be found", item.key))
-					assert.Equal(t, item.value, gotValue, fmt.Sprintf("Value of %q mismatches", item.key))
-				} else {
-					assert.False(t, gotFound, fmt.Sprintf("Item %q shouldn't be found", item.key))
-					assert.Nil(t, gotValue, fmt.Sprintf("Value of %q isn't nil", item.key))
-				}
+			for _, key := range tt.wantItems {
+				gotFound, gotValue := cache.Get(key)
+
+				assert.True(t, gotFound, fmt.Sprintf("Item %q should be found", key))
+				assert.Equal(t, testValue, gotValue, fmt.Sprintf("Value of %q mismatches", key))
 			}
 		})
 	}
